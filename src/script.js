@@ -10,6 +10,7 @@ import { log, Raycaster } from "three"
  */
 const gltfLoader = new GLTFLoader()
 const cubeTextureLoader = new THREE.CubeTextureLoader()
+const loader = new THREE.TextureLoader()
 
 /**
  * Base
@@ -18,11 +19,45 @@ const cubeTextureLoader = new THREE.CubeTextureLoader()
 const gui = new dat.GUI()
 const debugObject = {}
 
+debugObject.background = "#c1eaf7"
+debugObject.fogNear = 4
+debugObject.fogFar = 45
 // Canvas
+
 const canvas = document.querySelector("canvas.webgl")
 
 // Scene
 const scene = new THREE.Scene()
+scene.fog = new THREE.Fog(
+  debugObject.background,
+  debugObject.fogNear,
+  debugObject.fogFar
+)
+
+const debugFolderFog = gui.addFolder("Fog")
+
+debugFolderFog.addColor(debugObject, "background").onChange(() => {
+  // scene.background.set(debugObject.background)
+  scene.fog.color.set(debugObject.background)
+})
+
+debugFolderFog
+  .add(debugObject, "fogNear")
+  .min(1)
+  .max(10)
+  .step(1)
+  .onChange(() => {
+    scene.fog.near = debugObject.fogNear
+  })
+
+debugFolderFog
+  .add(debugObject, "fogFar")
+  .min(2)
+  .max(70)
+  .step(1)
+  .onChange(() => {
+    scene.fog.far = debugObject.fogFar
+  })
 
 /**
  * Update all material
@@ -41,24 +76,28 @@ const updateAllMaterials = () => {
     }
   })
 }
+
 /**
  * Environment map
  */
 const environmentMap = cubeTextureLoader.load([
-  "/textures/environmentMaps/0/px.jpg",
-  "/textures/environmentMaps/0/nx.jpg",
-  "/textures/environmentMaps/0/py.jpg",
-  "/textures/environmentMaps/0/ny.jpg",
-  "/textures/environmentMaps/0/pz.jpg",
-  "/textures/environmentMaps/0/nz.jpg",
+  "/textures/environmentMaps/out/px.png",
+  "/textures/environmentMaps/out/nx.png",
+  "/textures/environmentMaps/out/py.png",
+  "/textures/environmentMaps/out/ny.png",
+  "/textures/environmentMaps/out/pz.png",
+  "/textures/environmentMaps/out/nz.png",
 ])
 
 environmentMap.encoding = THREE.sRGBEncoding
 
-scene.background = environmentMap
 scene.environment = environmentMap
 
-debugObject.envMapIntensity = 5
+loader.load("/textures/background.png", function (texture) {
+  scene.background = texture
+})
+
+debugObject.envMapIntensity = 0.4
 gui
   .add(debugObject, "envMapIntensity")
   .min(0)
@@ -69,33 +108,94 @@ gui
 /**
  * Models
  */
-const world = {
-  groundChunk: 2,
-  doodadsPerChunk: 10,
-  doodadsStartAt: 4,
-  posConstraintMin: 0,
-  scaleVariation: 0.6,
+debugObject.world = {
+  groundChunk: 3,
+  doodads: {
+    arbre: {
+      density: 7,
+      scaleVariation: 0.5,
+      depthMin: 8,
+      collideDistance: 1,
+    },
+    sapin: {
+      density: 25,
+      scaleVariation: 0.7,
+      depthMin: 17,
+      collideDistance: 1,
+    },
+    herbe: {
+      density: 300,
+      scaleVariation: 3,
+      depthMin: 0,
+      depthMax: 10,
+      collideDistance: 0,
+    },
+    rocher1: {
+      density: 8,
+      scaleVariation: 3,
+      depthMin: 0,
+      depthMax: 20,
+      collideDistance: 1,
+    },
+    rocher2: {
+      density: 8,
+      scaleVariation: 3,
+      depthMin: 10,
+      depthMax: 20,
+      collideDistance: 1,
+    },
+    rocherbranche: {
+      density: 1,
+      scaleVariation: 0,
+      depthMin: 10,
+      depthMax: 20,
+      collideDistance: 1,
+    },
+    champignon1: {
+      density: 18,
+      scaleVariation: 1.5,
+      depthMin: 0,
+      depthMax: 15,
+      collideDistance: 0,
+    },
+    champignon2: {
+      density: 28,
+      scaleVariation: 1.5,
+      depthMin: 0,
+      depthMax: 20,
+      collideDistance: 0,
+    },
+    buisson: {
+      density: 8,
+      scaleVariation: 1.5,
+      depthMin: 7,
+      depthMax: 20,
+      collideDistance: 0,
+    },
+    souche: {
+      density: 3,
+      scaleVariation: 1.5,
+      depthMin: 7,
+      depthMax: 20,
+      collideDistance: 0,
+    },
+    branche: {
+      density: 3,
+      scaleVariation: 1.5,
+      depthMin: 10,
+      depthMax: 20,
+      collideDistance: 0,
+    },
+  },
 }
 
-gui
-  .add(world, "groundChunk")
+const debugFolderGround = gui.addFolder("World Generation")
+
+debugFolderGround
+  .add(debugObject.world, "groundChunk")
   .min(1)
   .max(15)
   .step(1)
-  .onFinishChange(generateWorld)
-
-gui
-  .add(world, "doodadsPerChunk")
-  .min(1)
-  .max(20)
-  .step(1)
-  .onFinishChange(generateWorld)
-
-gui
-  .add(world, "scaleVariation")
-  .min(0.1)
-  .max(2)
-  .step(0.001)
   .onFinishChange(generateWorld)
 
 generateWorld()
@@ -118,7 +218,7 @@ function generateWorld() {
     const ground = new THREE.Group()
     ground.name = "Ground"
 
-    for (let i = 0; i < world.groundChunk; i++) {
+    for (let i = 0; i < debugObject.world.groundChunk; i++) {
       const groundChunk = gltf.scene.clone()
       groundChunk.position.x = groundSize.x * i
       ground.add(groundChunk)
@@ -142,111 +242,176 @@ function loadDoodads(ground) {
   gltfLoader.load("/models/goblins-doodads.glb", (gltf) => {
     const doodads = gltf.scene.children
     const doodadsContainer = new THREE.Group()
+    const existingCoordinates = []
 
     doodadsContainer.name = "Doodads"
 
-    for (let i = 0; i < world.doodadsPerChunk * world.groundChunk; i++) {
+    // Foreach chunk
+    for (let chunkI = 0; chunkI < debugObject.world.groundChunk; chunkI++) {
+      // Foreach doodads
       doodads.forEach((doodad) => {
-        const doodadCopy = doodad.clone()
+        const doodadSettings = debugObject.world.doodads[doodad.name]
 
-        // Calculate scale
-        let scaleFactor = (Math.random() - 0.5) * world.scaleVariation + 1
+        if (doodadSettings) {
+          // Loop in doodads density
+          for (let i = 0; i < doodadSettings.density; i++) {
+            const doodadCopy = doodad.clone()
 
-        doodadCopy.scale.x *= scaleFactor
-        doodadCopy.scale.y *= scaleFactor
-        doodadCopy.scale.z *= scaleFactor
+            // Calculate scale
+            let scaleFactor = Math.abs(
+              (Math.random() - 0.5) * doodadSettings.scaleVariation + 1
+            )
 
-        // Calculate x & z coordinate
-        const x = Math.random() * groundX
-        const z = -(
-          Math.random() * (groundZ - world.posConstraintMin) +
-          world.posConstraintMin
-        )
+            doodadCopy.scale.x *= scaleFactor
+            doodadCopy.scale.y *= scaleFactor
+            doodadCopy.scale.z *= scaleFactor
 
-        // Calculate y coordinate using raycaster
-        const rayCasterOffsetY = 1
-        const doodadYPosRaycaster = new THREE.Raycaster()
-        const rayOrigin = new THREE.Vector3(x, groundY + rayCasterOffsetY, z)
-        const rayDirection = new THREE.Vector3(0, -1, 0)
+            // Calculate x & z coordinate
+            const x =
+              Math.random() * (groundX / debugObject.world.groundChunk) +
+              chunkI * (groundX / debugObject.world.groundChunk)
+            const depthConstraintMin = doodadSettings.depthMin
+              ? doodadSettings.depthMin
+              : 0
+            const depthConstraintMax = doodadSettings.depthMax
+              ? doodadSettings.depthMax
+              : groundZ
 
-        rayDirection.normalize()
-        doodadYPosRaycaster.set(rayOrigin, rayDirection)
+            const z = -(
+              Math.random() * (depthConstraintMax - depthConstraintMin) +
+              depthConstraintMin
+            )
 
-        const intersects = doodadYPosRaycaster.intersectObjects(
-          ground.children,
-          true
-        )
+            // Calculate y coordinate using raycaster
+            const rayCasterOffsetY = 1
+            const doodadYPosRaycaster = new THREE.Raycaster()
+            const rayOrigin = new THREE.Vector3(
+              x,
+              groundY + rayCasterOffsetY,
+              z
+            )
+            const rayDirection = new THREE.Vector3(0, -1, 0)
 
-        if (intersects[0].object.name == "Path") return
+            rayDirection.normalize()
+            doodadYPosRaycaster.set(rayOrigin, rayDirection)
 
-        const doodadBox = new THREE.Box3().setFromObject(doodadCopy)
-        let doodadSize = new THREE.Vector3()
-        doodadBox.getSize(doodadSize)
+            const intersects = doodadYPosRaycaster.intersectObjects(
+              ground.children,
+              true
+            )
 
-        const y = groundY + rayCasterOffsetY - intersects[0].distance
+            let applyDoodad = true
+            // Don't pop doodads on the path
+            if (intersects[0].object.name == "Path") {
+              applyDoodad = false
+            }
 
-        console.log(intersects)
-        // Calculate rotation
-        const doodadRotation = Math.random() * Math.PI * 2
-        doodadCopy.position.x = x
-        doodadCopy.position.y = y
-        doodadCopy.position.z = z
+            // Check if as collision with existing doodads to avoid ugly results
+            if (doodadSettings.collideDistance) {
+              existingCoordinates.forEach((coordinate) => {
+                if (
+                  x > coordinate.x - doodadSettings.collideDistance &&
+                  x < coordinate.x + doodadSettings.collideDistance &&
+                  z > coordinate.z - doodadSettings.collideDistance &&
+                  z < coordinate.z + doodadSettings.collideDistance
+                ) {
+                  applyDoodad = false
+                }
+              })
+            }
 
-        doodadCopy.rotation.z = doodadRotation
+            if (!applyDoodad) {
+              i = i - 1
+              continue
+            }
 
-        doodadsContainer.add(doodadCopy)
+            // Save coordinate to avoic collisions
+            if (doodadSettings.collideDistance > 0)
+              existingCoordinates.push({ x: x, z: z })
+
+            const doodadBox = new THREE.Box3().setFromObject(doodadCopy)
+            let doodadSize = new THREE.Vector3()
+            doodadBox.getSize(doodadSize)
+
+            const y = groundY + rayCasterOffsetY - intersects[0].distance
+
+            // Calculate rotation
+            const doodadRotation = Math.random() * Math.PI * 2
+            doodadCopy.position.x = x
+            doodadCopy.position.y = y
+            doodadCopy.position.z = z
+
+            doodadCopy.rotation.z = doodadRotation
+
+            doodadsContainer.add(doodadCopy)
+          }
+        }
       })
-
-      ground.add(doodadsContainer)
     }
+
+    ground.add(doodadsContainer)
   })
 }
 /**
  * Lights
  */
 
-const directionalLight = new THREE.DirectionalLight("#ffffff", 3)
-directionalLight.position.set(0.25, 3, -2.25)
-directionalLight.castShadow = true
-directionalLight.shadow.camera.far = 15
-directionalLight.shadow.mapSize.set(1024, 1024)
-directionalLight.shadow.normalBias = 0.05
-
-const directionalLightCameraHelper = new THREE.CameraHelper(
-  directionalLight.shadow.camera
-)
-
-scene.add(directionalLightCameraHelper)
-
-scene.add(directionalLight)
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444)
+hemiLight.position.set(0, 20, 0)
+hemiLight.intensity = 2
+scene.add(hemiLight)
 
 gui
-  .add(directionalLight, "intensity")
+  .add(hemiLight, "intensity")
   .min(0)
   .max(10)
   .step(0.001)
-  .name("lightIntensity")
+  .name("hemiLightIntensity")
 
-gui
-  .add(directionalLight.position, "x")
-  .min(-5)
-  .max(5)
-  .step(0.001)
-  .name("lightX")
+const dirLight = new THREE.DirectionalLight(0xffffff)
 
-gui
-  .add(directionalLight.position, "y")
-  .min(-5)
-  .max(5)
-  .step(0.001)
-  .name("lightY")
+// const directionalLight = new THREE.DirectionalLight("#ffffff", 3)
+// directionalLight.position.set(0.25, 3, -2.25)
+// directionalLight.castShadow = true
+// directionalLight.shadow.camera.far = 15
+// directionalLight.shadow.mapSize.set(1024, 1024)
+// directionalLight.shadow.normalBias = 0.05
 
-gui
-  .add(directionalLight.position, "z")
-  .min(-5)
-  .max(5)
-  .step(0.001)
-  .name("lightZ")
+// const directionalLightCameraHelper = new THREE.CameraHelper(
+//   directionalLight.shadow.camera
+// )
+
+// scene.add(directionalLightCameraHelper)
+
+// scene.add(directionalLight)
+
+// gui
+//   .add(directionalLight, "intensity")
+//   .min(0)
+//   .max(10)
+//   .step(0.001)
+//   .name("lightIntensity")
+
+// gui
+//   .add(directionalLight.position, "x")
+//   .min(-5)
+//   .max(5)
+//   .step(0.001)
+//   .name("lightX")
+
+// gui
+//   .add(directionalLight.position, "y")
+//   .min(-5)
+//   .max(5)
+//   .step(0.001)
+//   .name("lightY")
+
+// gui
+//   .add(directionalLight.position, "z")
+//   .min(-5)
+//   .max(5)
+//   .step(0.001)
+//   .name("lightZ")
 
 /**
  * Sizes
@@ -275,17 +440,35 @@ window.addEventListener("resize", () => {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(
-  75,
+  60,
   sizes.width / sizes.height,
   0.1,
   100
 )
-camera.position.set(-10, 7, 3)
+
 scene.add(camera)
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+let controls = null
+
+const debugFolderCamera = gui.addFolder("Camera")
+
+debugObject.viewWorld = function () {
+  camera.position.set(-10, 10, 5)
+  controls = new OrbitControls(camera, canvas)
+  controls.enableDamping = true
+}
+
+debugObject.viewIngame = function () {
+  camera.position.set(30, 1, 0)
+  camera.lookAt(30, 0.5, -4)
+  controls = null
+}
+
+debugFolderCamera.add(debugObject, "viewWorld")
+debugFolderCamera.add(debugObject, "viewIngame")
+
+debugObject.viewIngame()
 
 /**
  * Renderer
@@ -299,8 +482,8 @@ renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.physicallyCorrectLights = true
 renderer.outputEncoding = THREE.sRGBEncoding
-renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 3
+renderer.toneMapping = THREE.CineonToneMapping
+renderer.toneMappingExposure = 1.7
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
@@ -324,7 +507,7 @@ gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.001)
  */
 const tick = () => {
   // Update controls
-  controls.update()
+  if (controls) controls.update()
 
   // Render
   renderer.render(scene, camera)
