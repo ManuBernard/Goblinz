@@ -3,7 +3,6 @@ import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import * as dat from "dat.gui"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { log, Raycaster } from "three"
 
 /**
  * Loaders
@@ -81,19 +80,19 @@ const updateAllMaterials = () => {
  * Environment map
  */
 const environmentMap = cubeTextureLoader.load([
-  "/textures/environmentMaps/out/px.png",
-  "/textures/environmentMaps/out/nx.png",
-  "/textures/environmentMaps/out/py.png",
-  "/textures/environmentMaps/out/ny.png",
-  "/textures/environmentMaps/out/pz.png",
-  "/textures/environmentMaps/out/nz.png",
+  "/static/textures/environmentMaps/out/px.png",
+  "/static/textures/environmentMaps/out/nx.png",
+  "/static/textures/environmentMaps/out/py.png",
+  "/static/textures/environmentMaps/out/ny.png",
+  "/static/textures/environmentMaps/out/pz.png",
+  "/static/textures/environmentMaps/out/nz.png",
 ])
 
 environmentMap.encoding = THREE.sRGBEncoding
 
 scene.environment = environmentMap
 
-loader.load("/textures/background.png", function (texture) {
+loader.load("/static/textures/background.png", function (texture) {
   scene.background = texture
 })
 
@@ -209,7 +208,7 @@ function generateWorld() {
   })
 
   // Ground
-  gltfLoader.load("/models/goblins-ground.glb", (gltf) => {
+  gltfLoader.load("/static/models/goblins-ground.glb", (gltf) => {
     const box = new THREE.Box3().setFromObject(gltf.scene)
     const groundSize = new THREE.Vector3()
 
@@ -239,7 +238,7 @@ function loadDoodads(ground) {
   const groundY = box.getSize().y
   const groundZ = box.getSize().z
 
-  gltfLoader.load("/models/goblins-doodads.glb", (gltf) => {
+  gltfLoader.load("/static/models/goblins-doodads.glb", (gltf) => {
     const doodads = gltf.scene.children
     const doodadsContainer = new THREE.Group()
     const existingCoordinates = []
