@@ -17,7 +17,17 @@ const textureLoader = new THREE.TextureLoader()
  */
 // Debug
 const gui = new dat.GUI()
-const debugObject = {}
+const debugObject = {
+  inGameCamera: () => {
+    camera.position.set(0, 3, 50)
+  },
+  worldCamera: () => {
+    camera.position.set(150, 90, 70)
+  },
+}
+
+gui.add(debugObject, "inGameCamera")
+gui.add(debugObject, "worldCamera")
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl")
@@ -30,7 +40,8 @@ const scene = new THREE.Scene()
  */
 
 // Ground
-generateGround(scene)
+const ground = generateGround()
+scene.add(ground)
 
 /**
  * Sizes
@@ -64,7 +75,10 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 )
-camera.position.set(80, 50, 60)
+
+debugObject.worldCamera()
+// debugObject.inGameCamera()
+
 scene.add(camera)
 
 // Controls
@@ -88,8 +102,6 @@ const clock = new THREE.Clock()
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
-
-  // Update water
 
   // Update controls
   controls.update()

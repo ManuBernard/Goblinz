@@ -1,15 +1,15 @@
-uniform vec2 groundSize;
+uniform vec2 u_groundSize;
 
-uniform float hillsStarts;
-uniform float hillsHeight;
-uniform vec2 hillsFrequency;
+uniform float u_hillsHeight;
+uniform vec2 u_hillsFrequency;
 
-varying vec2 vUv;
-varying float vElevation;
+uniform float u_valeyPosition;
+uniform float u_valeySize;
+uniform float u_valeyDepth;
 
-//	Classic Perlin 2D Noise
-//	by Stefan Gustavson
-//
+varying vec2 v_uv;
+varying float v_elevation;
+
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 
 vec2 fade(vec2 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
@@ -47,20 +47,35 @@ float cnoise(vec2 P){
   return 2.3 * n_xy;
 }
 
+float parabola( float x, float k ){
+    return pow( 4.0*x*(1.0-x), k );
+}
+
+float cubicPulse( float c, float w, float x ){
+    x = abs(x - c);
+    if( x>w ) return 0.0;
+    x /= w;
+    return 1.0 - x*x*(3.0-2.0*x);
+}
+
 void main(){
   vec4 modelPosition = modelMatrix * vec4(position, 1.0);
 
   float elevation = 0.0;
 
   // Mountains
-  float mountainElevation = abs(cnoise(vec2(modelPosition.x * hillsFrequency.x, modelPosition.z * hillsFrequency.y)) * hillsHeight);
+  float hillsElevation = abs(cnoise(vec2(modelPosition.x * u_hillsFrequency.x / 10.0, modelPosition.z * u_hillsFrequency.y / 10.0)) * u_hillsHeight);
 
   // Path
-  float pathElevation = (position.y / groundSize.y);
-  pathElevation = max(sin(position.y / groundSize.y + hillsStarts) , 0.0);
+  float pathElevation = (position.y / u_groundSize.y);
+  // pathElevation = max(sin(position.y / groundSize.y) , 0.0);
 
-  elevation = mountainElevation * pathElevation;
-  modelPosition.y += elevation;
+  float valleyElevation = (1.0 - cubicPulse(u_valeyPosition, u_valeySize, modelPosition.z)) * u_valeyDepth;
+
+
+  modelPosition.y += valleyElevation * hillsElevation / 50.0;
+
+  //modelPosition.y = 1.0;
 
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectedPosition = projectionMatrix * viewPosition;
@@ -68,6 +83,6 @@ void main(){
   gl_Position = projectedPosition;
 
   // Varyings
-  vUv = uv;
-  vElevation = mountainElevation;
+  v_uv = uv;
+  v_elevation = modelPosition.y;
 }
