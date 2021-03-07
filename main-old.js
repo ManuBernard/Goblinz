@@ -97,6 +97,7 @@ loader.load("/static/textures/background.png", function (texture) {
 })
 
 debugObject.envMapIntensity = 0.4
+
 gui
   .add(debugObject, "envMapIntensity")
   .min(0)

@@ -59,21 +59,25 @@ float cubicPulse( float c, float w, float x ){
 }
 
 void main(){
-  vec4 modelPosition = modelMatrix * vec4(position, 1.0);
 
-  float elevation = 0.0;
+  vec3 newPosition = position;
 
-  // Mountains
-  float hillsElevation = abs(cnoise(vec2(modelPosition.x * u_hillsFrequency.x / 10.0, modelPosition.z * u_hillsFrequency.y / 10.0)) * u_hillsHeight);
+  //   // Mountains
+  // float hillsElevation = abs(cnoise(vec2(newPosition.x * u_hillsFrequency.x / 10.0, newPosition.y * u_hillsFrequency.y / 10.0)) * u_hillsHeight);
 
-  // Path
-  float pathElevation = (position.y / u_groundSize.y);
-  // pathElevation = max(sin(position.y / groundSize.y) , 0.0);
+  // // Path
+  // float pathElevation = (position.y / u_groundSize.y);
 
-  float valleyElevation = (1.0 - cubicPulse(u_valeyPosition, u_valeySize, modelPosition.z)) * u_valeyDepth;
+  // float valleyElevation = (1.0 - cubicPulse(u_valeyPosition, u_valeySize, newPosition.y)) * u_valeyDepth;
+
+  // float elevation = valleyElevation * hillsElevation / 50.0;
+
+  // newPosition.z += hillsElevation * valleyElevation;
+
+  vec4 modelPosition = modelMatrix * vec4(newPosition, 1.0);
 
 
-  modelPosition.y += valleyElevation * hillsElevation / 50.0;
+
 
   //modelPosition.y = 1.0;
 
