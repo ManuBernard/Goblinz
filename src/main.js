@@ -60,7 +60,7 @@ const callbacks = {
   },
 }
 
-debug(ground, callbacks)
+debug(ground, doodads, callbacks)
 callbacks.generateWorld()
 
 /**

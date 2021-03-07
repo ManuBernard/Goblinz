@@ -17,7 +17,7 @@ export default class Ground {
     this.parameters.mountainsRandomness = 0.2
 
     this.parameters.grassColor = "#40690f"
-    this.parameters.grassShadowColor = "#1b310d"
+    this.parameters.grassShadowColor = "#2b4d17"
     this.parameters.sandColor = "#c0a544"
 
     this.groundMaterial = null

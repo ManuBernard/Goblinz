@@ -13,40 +13,48 @@ export default class Doodads {
       groundChunk: 3,
       doodads: {
         arbre: {
-          density: 7,
-          scaleVariation: 0.5,
+          density: 17,
+          scaleFactor: 1,
+          scaleVariation: 0.2,
           depthMin: 28,
+          depthMax: 0,
           collideDistance: 1,
         },
         sapin: {
           density: 25,
+          scaleFactor: 1,
           scaleVariation: 0.7,
-          depthMin: 17,
+          depthMin: 28,
+          depthMax: 0,
           collideDistance: 1,
         },
         herbe: {
           density: 300,
+          scaleFactor: 1,
           scaleVariation: 2,
-          depthMin: 30,
+          depthMin: 22,
           depthMax: 80,
           collideDistance: 0,
         },
         rocher1: {
           density: 8,
+          scaleFactor: 1,
           scaleVariation: 3,
-          depthMin: 20,
+          depthMin: 22,
           depthMax: 30,
           collideDistance: 1,
         },
         rocher2: {
           density: 8,
+          scaleFactor: 1,
           scaleVariation: 3,
-          depthMin: 30,
+          depthMin: 22,
           depthMax: 50,
           collideDistance: 1,
         },
         rocherbranche: {
           density: 1,
+          scaleFactor: 1,
           scaleVariation: 0,
           depthMin: 30,
           depthMax: 60,
@@ -54,27 +62,31 @@ export default class Doodads {
         },
         champignon1: {
           density: 18,
+          scaleFactor: 1,
           scaleVariation: 1.5,
-          depthMin: 15,
+          depthMin: 22,
           depthMax: 45,
           collideDistance: 0,
         },
         champignon2: {
           density: 28,
+          scaleFactor: 1,
           scaleVariation: 1.5,
-          depthMin: 15,
+          depthMin: 22,
           depthMax: 45,
           collideDistance: 0,
         },
         buisson: {
           density: 8,
+          scaleFactor: 1,
           scaleVariation: 1.5,
-          depthMin: 17,
+          depthMin: 22,
           depthMax: 30,
           collideDistance: 0,
         },
         souche: {
           density: 3,
+          scaleFactor: 1,
           scaleVariation: 1.5,
           depthMin: 27,
           depthMax: 50,
@@ -82,8 +94,9 @@ export default class Doodads {
         },
         branche: {
           density: 3,
+          scaleFactor: 1,
           scaleVariation: 1.5,
-          depthMin: 20,
+          depthMin: 22,
           depthMax: 120,
           collideDistance: 0,
         },
@@ -117,7 +130,8 @@ export default class Doodads {
 
               // Calculate scale
               let scaleFactor = Math.abs(
-                (Math.random() - 0.5) * doodadSettings.scaleVariation + 1 * 5
+                (Math.random() - 0.5) * doodadSettings.scaleVariation +
+                  doodadSettings.scaleFactor * 5
               )
 
               doodadCopy.scale.x *= scaleFactor
@@ -131,9 +145,10 @@ export default class Doodads {
               const depthConstraintMin = doodadSettings.depthMin
                 ? doodadSettings.depthMin
                 : 0
-              const depthConstraintMax = doodadSettings.depthMax
-                ? doodadSettings.depthMax
-                : groundZ
+              const depthConstraintMax =
+                doodadSettings.depthMax > 0 && doodadSettings.depthMax < groundZ
+                  ? doodadSettings.depthMax
+                  : groundZ
 
               const z = -(
                 Math.random() * (depthConstraintMax - depthConstraintMin) +
@@ -196,7 +211,7 @@ export default class Doodads {
               // Calculate rotation
               const doodadRotation = Math.random() * Math.PI * 2
               doodadCopy.position.x = x
-              doodadCopy.position.y = y
+              doodadCopy.position.y = y - 0.2
               doodadCopy.position.z = z
 
               doodadCopy.rotation.z = doodadRotation
